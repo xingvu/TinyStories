@@ -77,9 +77,9 @@ valid_loader = DataLoader(dataset['validation'], batch_size=24, shuffle=True)
 optim = torch.optim.Adam(model.parameters(), lr=1e-3,betas=(0.9, 0.95)) # default lr ,betas and eps
 
 tokenizer.pad_token = tokenizer.eos_token
-best_loss = 1000
+best_loss = 10000000
 updates = 0
-for epoch in range(10):
+for epoch in range(1):
     print(f"epoch : {epoch}")
     print(f"{'*'*45}-train-{epoch:02}-{'*'*45}")
     for batch in tqdm(train_loader):
@@ -105,7 +105,8 @@ for epoch in range(10):
             loss_valid += model(tokenized,labels = tokenized)["loss"].item()
             del tokenized
             torch.cuda.empty_cache()
-        print(loss_valid)
+        print(f"train-{epoch+1:02}- : {loss_valid}")
         print("-"*100)
-        if best_loss > loss_valid:
+        if best_loss > loss_valid or epoch == 0:
             model.save_pretrained(f"{args.model_folder}/{args.model_name}_best")
+            best_loss = loss_valid
