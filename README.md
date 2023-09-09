@@ -10,7 +10,7 @@ In this repository, we use the GPT2 architecture and its tokenizer, which does n
 
 ### Pretraining
 
-To train the model using the TinyStories dataset, run the `model/train.sh` script. The paper mentions that GPT3 uses the Adam optimizer with $\beta_1 = 0.9, \beta_2 = 0.95, \epsilon = 10^{−8}$. This repository follows the same optimization settings and sets the learning rate to $lr = 10^{−3}$. 
+To train the model using the TinyStories dataset, run the `model/train.sh` script. [GPT3](https://arxiv.org/pdf/2005.14165.pdf) uses the Adam optimizer with $\beta_1 = 0.9, \beta_2 = 0.95, \epsilon = 10^{−8}$. This repository follows the same optimization settings and sets the learning rate to $lr = 10^{−3}$. 
 
 
 
