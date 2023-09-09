@@ -74,7 +74,7 @@ valid_loader = DataLoader(dataset['validation'], batch_size=24, shuffle=True)
 # 2. train from scarch
 ########################################################
 
-optim = torch.optim.Adam(model.parameters(), lr=1e-3) # default lr ,betas and eps
+optim = torch.optim.Adam(model.parameters(), lr=1e-3,betas=(0.9, 0.95)) # default lr ,betas and eps
 
 tokenizer.pad_token = tokenizer.eos_token
 best_loss = 1000
