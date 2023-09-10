@@ -67,7 +67,7 @@ device = "cuda"
 model.to(device)
 
 dataset = load_from_disk("/embedding/v-xingwuchen/ts_data/TinyStories/dataset/TinyStories")
-train_loader = DataLoader(dataset['train'], batch_size=12, shuffle=True)
+train_loader = DataLoader(dataset['train'], batch_size=16, shuffle=True)
 valid_loader = DataLoader(dataset['validation'], batch_size=24, shuffle=True)
 
 ########################################################
@@ -101,7 +101,7 @@ for epoch in range(1):
         print(f"{'-'*45}-valid-{epoch+1:02}-{'-'*45}")
         loss_valid = 0
         for batch in tqdm(valid_loader):
-            tokenized = tokenizer(batch['text'], padding=True, return_tensors='pt',max_length = 1024,truncation = True)['input_ids'].to(device)
+            tokenized = tokenizer(batch['text'], padding=True, return_tensors='pt',max_length = 512,truncation = True)['input_ids'].to(device)
             loss_valid += model(tokenized,labels = tokenized)["loss"].item()
             del tokenized
             torch.cuda.empty_cache()

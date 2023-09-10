@@ -1,5 +1,5 @@
 # save model path
-rm -rf /embedding/v-xingwuchen/ts_data/TinyStories/tmp_models
+# rm -rf /embedding/v-xingwuchen/ts_data/TinyStories/tmp_models
 mkdir -p /embedding/v-xingwuchen/ts_data/TinyStories/tmp_models
 cd $(dirname "$0")
 
