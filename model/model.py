@@ -1,8 +1,10 @@
 
 import sys
 import torch
+import random
 import argparse
 
+import numpy as np
 from tqdm import tqdm
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
@@ -20,6 +22,9 @@ parser.add_argument('--model-folder',
 parser.add_argument('--model-name', 
                     type=str,
                     default="TinyStories")
+parser.add_argument('--eval-iters', 
+                    type=int,
+                    default=200)
 parser.add_argument('--vocab-size', 
                     type=int,
                     default=50257,
@@ -46,9 +51,29 @@ args = parser.parse_args()
 # 1. initialize models and dataset
 ########################################################
 
+def setup_seed(seed):
+     torch.manual_seed(seed)
+     torch.cuda.manual_seed_all(seed)
+     np.random.seed(seed)
+     random.seed(seed)
+     torch.backends.cudnn.deterministic = True
+
+def estimate_loss(model, valid_loader) :
+    model.eval()
+    with torch.no_grad():
+        losses = torch.zeros(args.eval_iters)
+        for k,batch in enumerate(valid_loader):
+            tokenized = tokenizer(batch['text'], padding=True, return_tensors='pt',max_length = 256,truncation = True)['input_ids'].to(device)
+            loss = model(tokenized,labels = tokenized)["loss"]
+            losses[k] = loss.item()
+            if k == args.eval_iters - 1 :
+                break
+    model.train()
+    return losses.mean()
+
+setup_seed(3407) # https://arxiv.org/abs/2109.08203
+
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-
-
 
 config = GPT2Config(
     vocab_size=args.vocab_size,
@@ -67,7 +92,7 @@ device = "cuda"
 model.to(device)
 
 dataset = load_from_disk("/embedding/v-xingwuchen/ts_data/TinyStories/dataset/TinyStories")
-train_loader = DataLoader(dataset['train'], batch_size=16, shuffle=True)
+train_loader = DataLoader(dataset['train'], batch_size=48, shuffle=True)
 valid_loader = DataLoader(dataset['validation'], batch_size=24, shuffle=True)
 
 ########################################################
@@ -75,6 +100,7 @@ valid_loader = DataLoader(dataset['validation'], batch_size=24, shuffle=True)
 ########################################################
 
 optim = torch.optim.Adam(model.parameters(), lr=1e-3,betas=(0.9, 0.95)) # default lr ,betas and eps
+# optim = torch.optim.AdamW(model.parameters(), lr=1e-3,betas=(0.9, 0.95),weight_decay = 1e-1) 
 
 tokenizer.pad_token = tokenizer.eos_token
 best_loss = 10000000
@@ -84,15 +110,17 @@ for epoch in range(1):
     print(f"{'*'*45}-train-{epoch:02}-{'*'*45}")
     for batch in tqdm(train_loader):
         optim.zero_grad()
-        tokenized = tokenizer(batch['text'], padding=True, return_tensors='pt',max_length = 512,truncation = True)['input_ids'].to(device)
+        tokenized = tokenizer(batch['text'], padding=True, return_tensors='pt',max_length = 256,truncation = True)['input_ids'].to(device)
         loss = model(tokenized,labels = tokenized)["loss"]
         loss.backward()
         optim.step()
         updates += 1
         # print(f"train-{epoch:02}-{updates} : {loss.item()}")
         if updates % 50 == 0 :
+            
+            validation_loss = estimate_loss(model,valid_loader)
+            tqdm.write(f"train-{epoch+1:02}-{updates} : {validation_loss}")
             sys.stdout.flush()
-            tqdm.write(f"train-{epoch+1:02}-{updates} : {loss.item()}")
             # print(f"train-{epoch:02}-{updates} : {loss.item()}")
         del tokenized,loss
         torch.cuda.empty_cache()
